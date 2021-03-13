@@ -81,8 +81,9 @@ jobs:
         run: |
           mkdir -p build
           $JAVA_HOME/bin/javapackager -deploy -appclass Menu -name SpaceGame -native image -outdir build -outfile SpaceGame -title SpaceGame -srcdir . -srcfiles SpaceGame.jar -v
-          tar --directory build/bundles/SpaceGame --create -v . | gzip --best > SpaceGame.tar.gz
-          tar --directory build/bundles/SpaceGame --create -v . | xz -9 > SpaceGame.tar.xz
+          tar --directory build/bundles/SpaceGame --create --file SpaceGame.tar
+          gzip --best --keep SpaceGame.tar
+          xz -9 --keep SpaceGame.tar
 
       - name: Upload Linux gzip package
         uses: actions/upload-artifact@v2
