@@ -1,5 +1,3 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Java CI
 
 on:
@@ -12,13 +10,11 @@ on:
   pull_request:
     branches:
       - main
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
@@ -32,7 +28,7 @@ jobs:
         run: javac src/*.java -d build/classes
 
       - name: Create JAR
-        run: '& "${env:JAVA_HOME}\bin\javapackager.exe" -createjar -appclass Menu -srcdir build/classes -outdir build -outfile SpaceGame -v'
+        run: $JAVA_HOME/bin/javapackager -createjar -appclass Menu -srcdir build/classes -outdir build -outfile SpaceGame -v
 
       - name: Upload JAR
         uses: actions/upload-artifact@v2
@@ -41,8 +37,9 @@ jobs:
           path: build/SpaceGame.jar
 
   create-package-windows:
-    needs: build
     runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
     steps:
       - name: Setup Java JDK
         uses: actions/setup-java@v1.4.3
@@ -61,15 +58,16 @@ jobs:
           & "${env:JAVA_HOME}\bin\javapackager.exe" -deploy -appclass Menu -name SpaceGame -native image -outdir build -outfile SpaceGame -title SpaceGame -srcdir . -srcfiles SpaceGame.jar -v
           Compress-Archive -Path build\bundles\SpaceGame\* -DestinationPath SpaceGame.zip -Force
 
-      - name: Upload Windows package
+      - name: Upload Windows packages
         uses: actions/upload-artifact@v2
         with:
-          name: SpaceGame_windows.zip
+          name: windows
           path: SpaceGame.zip
 
   create-package-linux:
-    needs: build
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
     steps:
       - name: Setup Java JDK
         uses: actions/setup-java@v1.4.3
@@ -90,17 +88,11 @@ jobs:
           gzip --best --keep SpaceGame.tar
           xz -9 --keep SpaceGame.tar
 
-      - name: Upload Linux gzip package
+      - name: Upload Linux packages
         uses: actions/upload-artifact@v2
         with:
-          name: SpaceGame_linux.tar.gz
-          path: SpaceGame.tar.gz
-
-      - name: Upload Linux xz package
-        uses: actions/upload-artifact@v2
-        with:
-          name: SpaceGame_linux.tar.xz
-          path: SpaceGame.tar.xz
+          name: linux
+          path: SpaceGame.tar.*
 
   release:
     runs-on: ubuntu-latest
@@ -111,13 +103,20 @@ jobs:
     steps:
       - uses: actions/download-artifact@v2
         id: download
+      - name: Display structure of downloaded files
+        run: ls -R
+      - name: Rename files
+        run: |
+          mv ${{steps.download.outputs.download-path}}/linux/SpaceGame.tar.gz ./SpaceGame_linux.tar.gz
+          mv ${{steps.download.outputs.download-path}}/linux/SpaceGame.tar.xz ./SpaceGame_linux.tar.xz
+          mv ${{steps.download.outputs.download-path}}/windows/SpaceGame.zip ./SpaceGame_windows.zip
       - uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
           artifacts: >-
-            ${{steps.download.outputs.download-path}}/**/SpaceGame.jar,
-            ${{steps.download.outputs.download-path}}/**/SpaceGame_linux.tar.gz,
-            ${{steps.download.outputs.download-path}}/**/SpaceGame_linux.tar.xz,
-            ${{steps.download.outputs.download-path}}/**/SpaceGame_windows.zip
+            ${{steps.download.outputs.download-path}}/SpaceGame.jar/SpaceGame.jar,
+            SpaceGame_linux.tar.gz,
+            SpaceGame_linux.tar.xz,
+            SpaceGame_windows.zip
           omitBody: true
           token: ${{ secrets.GITHUB_TOKEN }}
