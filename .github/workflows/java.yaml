@@ -2,13 +2,16 @@
 
 name: Java CI
 
-# Controls when the action will run.
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: [ main ]
+    branches:
+      - main
+    tags:
+      - v[0-9]+.[0-9]+
+      - v[0-9]+.[0-9]+.[0-9]+
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -36,6 +39,7 @@ jobs:
         with:
           name: SpaceGame.jar
           path: build/SpaceGame.jar
+
   create-package-windows:
     needs: build
     runs-on: windows-latest
@@ -62,6 +66,7 @@ jobs:
         with:
           name: SpaceGame_windows.zip
           path: SpaceGame.zip
+
   create-package-linux:
     needs: build
     runs-on: ubuntu-latest
@@ -81,7 +86,7 @@ jobs:
         run: |
           mkdir -p build
           $JAVA_HOME/bin/javapackager -deploy -appclass Menu -name SpaceGame -native image -outdir build -outfile SpaceGame -title SpaceGame -srcdir . -srcfiles SpaceGame.jar -v
-          tar --directory build/bundles/SpaceGame --create --file SpaceGame.tar
+          tar --directory build/bundles/SpaceGame --create --file SpaceGame.tar .
           gzip --best --keep SpaceGame.tar
           xz -9 --keep SpaceGame.tar
 
@@ -96,3 +101,18 @@ jobs:
         with:
           name: SpaceGame_linux.tar.xz
           path: SpaceGame.tar.xz
+
+  release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - create-package-linux
+      - create-package-windows
+    steps:
+      - uses: actions/checkout@v1
+      - uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          artifacts: "SpaceGame.jar,SpaceGame_linux.*,SpaceGame_windows.*"
+          omitBody: true
+          token: ${{ secrets.GITHUB_TOKEN }}
