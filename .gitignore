@@ -1,6 +1,7 @@
 ### Intellij ###
 .idea
 *.iws
+build/
 out/
 
 ### Java ###
