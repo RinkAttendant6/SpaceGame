@@ -36,7 +36,7 @@ jobs:
         with:
           name: SpaceGame.jar
           path: build/SpaceGame.jar
-  create-executable:
+  create-package-windows:
     needs: build
     runs-on: windows-latest
     steps:
@@ -55,10 +55,43 @@ jobs:
         run: |
           New-Item -ItemType Directory build -Force
           & "${env:JAVA_HOME}\bin\javapackager.exe" -deploy -appclass Menu -name SpaceGame -native image -outdir build -outfile SpaceGame -title SpaceGame -srcdir . -srcfiles SpaceGame.jar -v
-          Compress-Archive -Path build\bundles\SpaceGame\* -DestinationPath build\SpaceGame.zip -Force
+          Compress-Archive -Path build\bundles\SpaceGame\* -DestinationPath SpaceGame.zip -Force
 
-      - name: Upload Windows executable
+      - name: Upload Windows package
         uses: actions/upload-artifact@v2
         with:
+          name: SpaceGame_windows.zip
+          path: SpaceGame.zip
+  create-package-linux:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Java JDK
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: 8
+          java-package: jdk+fx
+
+      - name: Download JAR
+        uses: actions/download-artifact@v2
+        with:
           name: SpaceGame.jar
-          path: build/SpaceGame.zip
+
+      - name: Create self-contained Linux package
+        run: |
+          mkdir -p build
+          $JAVA_HOME/bin/javapackager -deploy -appclass Menu -name SpaceGame -native image -outdir build -outfile SpaceGame -title SpaceGame -srcdir . -srcfiles SpaceGame.jar -v
+          tar --directory build/bundles/SpaceGame --create -v . | gzip --best > SpaceGame.tar.gz
+          tar --directory build/bundles/SpaceGame --create -v . | xz -9 > SpaceGame.tar.xz
+
+      - name: Upload Linux gzip package
+        uses: actions/upload-artifact@v2
+        with:
+          name: SpaceGame_linux.tar.gz
+          path: SpaceGame.tar.gz
+
+      - name: Upload Linux xz package
+        uses: actions/upload-artifact@v2
+        with:
+          name: SpaceGame_linux.tar.xz
+          path: SpaceGame.tar.xz
