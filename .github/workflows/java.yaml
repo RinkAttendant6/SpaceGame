@@ -26,13 +26,39 @@ jobs:
           java-package: jdk+fx
 
       - name: Compile
-        run: |
-          echo ${env:JAVA_HOME}
-          javac src/*.java -d build/classes
+        run: javac src/*.java -d build/classes
 
       - name: Create JAR
         run: '& "${env:JAVA_HOME}\bin\javapackager.exe" -createjar -appclass Menu -srcdir build/classes -outdir build -outfile SpaceGame -v'
 
-      - uses: actions/upload-artifact@v2
+      - name: Upload JAR
+        uses: actions/upload-artifact@v2
         with:
+          name: SpaceGame.jar
           path: build/SpaceGame.jar
+  create-executable:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - name: Setup Java JDK
+        uses: actions/setup-java@v1.4.3
+        with:
+          java-version: 8
+          java-package: jdk+fx
+
+      - name: Download JAR
+        uses: actions/download-artifact@v2
+        with:
+          name: SpaceGame.jar
+
+      - name: Create self-contained Windows package
+        run: |
+          New-Item -ItemType Directory build -Force
+          & "${env:JAVA_HOME}\bin\javapackager.exe" -deploy -appclass Menu -name SpaceGame -native image -outdir build -outfile SpaceGame -title SpaceGame -srcdir . -srcfiles SpaceGame.jar -v
+          Compress-Archive -Path build\bundles\SpaceGame\* -DestinationPath build\SpaceGame.zip -Force
+
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v2
+        with:
+          name: SpaceGame.jar
+          path: build/SpaceGame.zip
