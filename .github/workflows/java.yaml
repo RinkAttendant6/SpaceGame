@@ -109,10 +109,15 @@ jobs:
       - create-package-linux
       - create-package-windows
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/download-artifact@v2
+        id: download
       - uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          artifacts: "SpaceGame.jar,SpaceGame_linux.*,SpaceGame_windows.*"
+          artifacts: >-
+            ${{steps.download.outputs.download-path}}/**/SpaceGame.jar,
+            ${{steps.download.outputs.download-path}}/**/SpaceGame_linux.tar.gz,
+            ${{steps.download.outputs.download-path}}/**/SpaceGame_linux.tar.xz,
+            ${{steps.download.outputs.download-path}}/**/SpaceGame_windows.zip
           omitBody: true
           token: ${{ secrets.GITHUB_TOKEN }}
