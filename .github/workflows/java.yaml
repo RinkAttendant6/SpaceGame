@@ -48,7 +48,7 @@ jobs:
           java-package: jdk+fx
 
       - name: Download JAR
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: SpaceGame.jar
 
@@ -76,7 +76,7 @@ jobs:
           java-package: jdk+fx
 
       - name: Download JAR
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: SpaceGame.jar
 
@@ -101,7 +101,7 @@ jobs:
       - create-package-linux
       - create-package-windows
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4.1.7
         id: download
       - name: Display structure of downloaded files
         run: ls -R
